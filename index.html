@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>빈자리 — 비어 있는 강의실 찾기</title>
+<style>
+:root{
+  --bg:#f4f6f8; --card:#fff; --ink:#18212b; --sub:#66727f; --line:#e1e6eb;
+  --accent:#0f766e; --accent-d:#0b5a54; --accent-bg:#e1f4f1;
+  --ok:#15803d; --ok-bg:#e3f6e9; --warn:#b45309; --warn-bg:#fdf0dc; --bad:#b91c1c; --bad-bg:#fde8e8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#dfe5ea;color:var(--ink);
+  font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;font-size:15px;line-height:1.45}
+#app{max-width:480px;min-height:100vh;margin:0 auto;background:var(--bg);position:relative;padding-bottom:76px;box-shadow:0 0 30px rgba(0,0,0,.08)}
+header.top{position:sticky;top:0;z-index:5;background:var(--accent);color:#fff;padding:14px 16px;display:flex;align-items:baseline;gap:10px}
+header.top h1{margin:0;font-size:20px;letter-spacing:-.3px}
+header.top span{font-size:12.5px;opacity:.85}
+#banner{position:sticky;top:48px;z-index:4;background:#fff7e0;border-bottom:1px solid #f0d98a;color:#6b4e00;
+  padding:8px 16px;display:flex;justify-content:space-between;gap:10px;font-size:13px}
+#banner[hidden]{display:none}
+#banner b{font-variant-numeric:tabular-nums}
+main{padding:12px 14px}
+h2{font-size:18px;margin:8px 0}
+h3{font-size:15px;margin:18px 0 8px}
+.ptitle{margin-top:4px}
+.sub{color:var(--sub);font-size:13px}
+.note{background:var(--warn-bg);color:var(--warn);padding:6px 10px;border-radius:8px;font-size:12.5px;margin:8px 0}
+.row{display:flex;align-items:center;gap:8px}.between{justify-content:space-between}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+.clock{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.clock-label{font-size:12.5px;color:var(--sub)}
+input[type=time],select,.input{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+.input{width:100%;margin:4px 0 10px}
+.here{font-size:12.5px;color:var(--sub)}
+.link{background:none;border:0;color:var(--accent);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline;padding:0}
+.fgroup{margin-top:10px}
+.flabel{font-size:12.5px;color:var(--sub);margin-bottom:5px;display:block}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;min-height:34px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.count{margin:6px 2px 8px;font-size:14px}.count.dim{margin-top:18px;color:var(--sub)}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.card:active{background:#f0f5f4}.card.dimmed{opacity:.65}
+.card .title{font-weight:700;font-size:15px}
+.card .main{margin-top:6px;font-size:14px}.card .main b{color:var(--accent-d);font-size:16px}
+.card .main.occ{color:var(--bad)}
+.card .sub{margin-top:2px}
+.star{color:#e0a100}
+.tags{display:flex;gap:10px;margin-top:8px;font-size:12.5px;color:var(--sub);flex-wrap:wrap}
+
+.badge{flex:none;font-size:11.5px;padding:3px 8px;border-radius:999px;font-weight:600;white-space:nowrap}
+.badge.verified{background:var(--ok-bg);color:var(--ok)}
+.badge.timetable{background:#eef1f4;color:var(--sub)}
+.badge.reported,.badge.class,.badge.closed{background:var(--bad-bg);color:var(--bad)}
+
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center}
+.foot{text-align:center;color:var(--sub);font-size:12px;margin-top:18px}
+
+.btn{font:inherit;font-size:14px;padding:10px 14px;border-radius:10px;border:1px solid var(--accent);background:#fff;color:var(--accent-d);cursor:pointer;text-decoration:none;display:inline-block;text-align:center;min-height:42px}
+.btn.on{background:var(--accent-bg)}
+.btn.ghost{border-color:var(--line);color:var(--ink)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.big{width:100%;margin-top:14px;padding:14px;font-size:16px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+.back{background:none;border:0;font:inherit;color:var(--accent-d);cursor:pointer;padding:4px 0;min-height:36px}
+.d-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.d-head h2{margin:0}
+.alert{border-radius:12px;padding:12px 14px;margin:12px 0}
+.alert.ok{background:var(--ok-bg);color:#14532d}.alert.occ{background:var(--bad-bg);color:#7f1d1d}
+.alert .warn{margin-top:6px;color:var(--warn);font-size:13.5px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0}
+.facts div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.facts dt{font-size:12px;color:var(--sub)}.facts dd{margin:2px 0 0;font-weight:600}
+.tl .bar{position:relative;height:22px;background:var(--ok-bg);border-radius:6px;overflow:hidden}
+.tl .blk{position:absolute;top:0;bottom:0;background:#e8a0a0}
+.tl .nowline{position:absolute;top:-2px;bottom:-2px;width:3px;background:var(--ink)}
+.tl .ticks{position:relative;height:16px;font-size:11px;color:var(--sub)}
+.tl .ticks span{position:absolute;transform:translateX(-50%)}
+.sched{list-style:none;padding:0;margin:8px 0;font-size:13.5px}
+.sched li{padding:3px 0}.sched span{display:inline-block;width:110px;color:var(--sub);font-variant-numeric:tabular-nums}
+
+.scn{font-weight:600;margin:4px 0 8px}
+.bigtimer{font-size:44px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;margin:6px 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px}
+.sl{font-size:12px;color:var(--sub)}.sv{font-size:20px;font-weight:700;margin:2px 0}.ss{font-size:11px;color:var(--sub)}
+.tbl{width:100%;border-collapse:collapse;margin-top:12px;background:var(--card);font-size:13px}
+.tbl th,.tbl td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left}
+
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid var(--line);display:flex;z-index:6}
+.nav a{flex:1;text-align:center;padding:10px 0 12px;text-decoration:none;color:var(--sub);font-size:12px}
+.nav a b{display:block;font-size:20px;line-height:1.2}
+.nav a.on{color:var(--accent-d);font-weight:700}
+
+#toast{position:fixed;left:50%;bottom:90px;transform:translate(-50%,20px);background:#111c;color:#fff;background:rgba(17,28,39,.92);padding:10px 16px;border-radius:999px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:90%;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center;z-index:30}
+#modal.open{display:flex}
+.sheet{background:#fff;width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:18px 16px 24px}
+.sheet h3{margin-top:0}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #f59e0b;outline-offset:2px}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.crow{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-bottom:6px}
+.crow .cn{grid-column:1 / 3;margin:0}
+.crow .chip{justify-self:end}
+.memo{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin:10px 0 0;font-size:13.5px}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top"><h1>빈자리</h1><span>지금 비어 있는 강의실, 로그인 없이 한눈에</span></header>
+  <main id="view"></main>
+  <nav class="nav" aria-label="주 메뉴">
+    <a href="#home" data-tab="home"><b>🔎</b>찾기</a>
+    <a href="#saved" data-tab="saved"><b>★</b>저장</a>
+    <a href="#add" data-tab="add"><b>＋</b>추가</a>
+  </nav>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="modal"></div>
+</div>
+<script>
+/* 빈자리 — 가상 데이터 (실제 학교 시간표가 아닙니다) */
+(function (root) {
+  const t = (s) => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+  const c = (s, e, name) => ({ s: t(s), e: t(e), name });
+
+  const BUILDINGS = {
+    hum: { name: '인문관', x: 0, y: 0 },
+    eng: { name: '공학관', x: 300, y: 120 },
+    lib: { name: '도서관', x: 150, y: -100 },
+    stu: { name: '학생회관', x: 120, y: 60 },
+    sci: { name: '자연과학관', x: -180, y: 150 }
+  };
+
+  // outlets: 0 없음 / 1 보통 / 2 많음   noise: 0 조용 / 1 보통 / 2 활발
+  const ROOMS = [
+    { id: 'h101', b: 'hum', floor: '1F', name: '101호', cap: 40, outlets: 1, noise: 1,
+      classes: [c('09:00', '10:30', '글쓰기'), c('13:00', '14:30', '철학입문'), c('16:00', '17:30', '한국사')] },
+    { id: 'h203', b: 'hum', floor: '2F', name: '203호', cap: 30, outlets: 2, noise: 0,
+      classes: [c('10:30', '12:00', '영문학개론'), c('15:00', '16:30', '사학개론')] },
+    { id: 'h204', b: 'hum', floor: '2F', name: '204호', cap: 20, outlets: 0, noise: 0,
+      classes: [c('09:00', '10:30', '언어학'), c('14:00', '15:30', '문화연구')] },
+    { id: 'h302', b: 'hum', floor: '3F', name: '302호', cap: 50, outlets: 1, noise: 1,
+      classes: [c('11:00', '12:30', '교양영어'), c('13:30', '15:00', '심리학개론')] },
+    { id: 'h305', b: 'hum', floor: '3F', name: '305호 (소세미나실)', cap: 12, outlets: 2, noise: 0,
+      classes: [c('09:30', '10:30', '독서토론'), c('17:00', '18:30', '대학원 세미나')] },
+    { id: 'e201', b: 'eng', floor: '2F', name: '201호', cap: 60, outlets: 2, noise: 1,
+      classes: [c('09:00', '10:30', '미적분학'), c('13:00', '14:30', '프로그래밍'), c('15:00', '16:30', '자료구조')] },
+    { id: 'e305', b: 'eng', floor: '3F', name: '305호', cap: 35, outlets: 2, noise: 1,
+      classes: [c('10:00', '11:30', '선형대수'), c('14:00', '15:30', '물리학')] },
+    { id: 'e402', b: 'eng', floor: '4F', name: '402호 (팀플실)', cap: 8, outlets: 2, noise: 2,
+      classes: [c('12:00', '13:30', '캡스톤 설계')] },
+    { id: 'e108', b: 'eng', floor: '1F', name: '108호', cap: 45, outlets: 0, noise: 1,
+      classes: [c('09:00', '12:00', '실험(정기)'), c('15:00', '17:00', '공학설계')] },
+    { id: 'l001', b: 'lib', floor: 'B1', name: '세미나실 A', cap: 6, outlets: 2, noise: 0,
+      classes: [c('10:00', '11:00', '스터디 정기 예약'), c('16:00', '18:00', '스터디 정기 예약')] },
+    { id: 'l002', b: 'lib', floor: 'B1', name: '세미나실 B', cap: 10, outlets: 2, noise: 0,
+      classes: [c('13:00', '15:00', '스터디 정기 예약')] },
+    { id: 's201', b: 'stu', floor: '2F', name: '소모임실', cap: 10, outlets: 1, noise: 2,
+      classes: [c('12:00', '13:00', '동아리 정기모임'), c('18:00', '20:00', '동아리 정기모임')] },
+    { id: 'c101', b: 'sci', floor: '1F', name: '101호', cap: 70, outlets: 1, noise: 1,
+      classes: [c('09:00', '10:30', '일반화학'), c('10:30', '12:00', '일반물리'), c('14:00', '16:00', '생명과학')] },
+    { id: 'c207', b: 'sci', floor: '2F', name: '207호', cap: 24, outlets: 2, noise: 0,
+      classes: [c('13:00', '14:30', '통계학'), c('16:30', '18:00', '데이터분석')] }
+  ];
+
+  // 방금 전 확인(분 전) — 데이터 시연용 시드
+  const SEED_VERIFIED = { h203: 8, l002: 20, c207: 25 };
+  // 사용 중 제보 시드 (시간표에 없는 특강 등)
+  const SEED_REPORTS = { e305: { type: 'occupied', agoMin: 12, note: '특강 진행 중 (시간표에 없음)' } };
+
+  const DATA = { BUILDINGS, ROOMS, SEED_VERIFIED, SEED_REPORTS };
+  if (typeof module !== 'undefined' && module.exports) module.exports = DATA;
+  root.DATA = DATA;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* 빈자리 — 순수 로직 (UI와 분리, node로 테스트 가능) */
+(function (root) {
+  const OPEN = 8 * 60, CLOSE = 22 * 60, DEMO = 11 * 60, REPORT_TTL = 30;
+
+  function fmtTime(m) {
+    const h = Math.floor(m / 60), mm = m % 60;
+    return String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  }
+  function fmtDur(mins) {
+    mins = Math.max(0, Math.round(mins));
+    const h = Math.floor(mins / 60), m = mins % 60;
+    if (h && m) return h + '시간 ' + m + '분';
+    if (h) return h + '시간';
+    return m + '분';
+  }
+  function fmtSec(sec) {
+    sec = Math.max(0, Math.round(sec));
+    return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+  }
+
+  // 기준 시각: 수동 지정 > 실제 시각(운영 시간 안) > 데모 시각(11:00)
+  function getNow(clock, date) {
+    if (clock != null) return { min: clock, demo: false, manual: true };
+    const d = date || new Date();
+    const m = d.getHours() * 60 + d.getMinutes();
+    if (m >= OPEN && m < CLOSE) return { min: m, demo: false, manual: false };
+    return { min: DEMO, demo: true, manual: false };
+  }
+
+  function walkMin(buildings, a, b) {
+    if (a === b) return 1;
+    const A = buildings[a], B = buildings[b];
+    const dist = Math.hypot(A.x - B.x, A.y - B.y);
+    return Math.max(2, Math.round(dist / 70));
+  }
+
+  function status(room, now, report, verifiedAgo, nowTs) {
+    if (now < OPEN || now >= CLOSE) {
+      return { occupied: true, reason: 'closed', freeMins: 0, freeUntil: null, current: null, next: null,
+        badge: { kind: 'closed', text: '이용 시간 아님' } };
+    }
+    const classes = room.classes;
+    const current = classes.find((k) => k.s <= now && now < k.e) || null;
+    const next = classes.find((k) => k.s > now) || null;
+    const freeUntil = next ? next.s : CLOSE;
+
+    let rep = null;
+    if (report) {
+      const age = Math.floor((nowTs - report.ts) / 60000);
+      if (age >= 0 && age < REPORT_TTL) rep = Object.assign({}, report, { age });
+    }
+    if (current) {
+      return { occupied: true, reason: 'class', current, next, freeUntil: null, freeMins: 0,
+        availableAt: current.e, report: rep, badge: { kind: 'class', text: '수업 중' } };
+    }
+    if (rep && rep.type === 'occupied') {
+      return { occupied: true, reason: 'report', current: null, next, freeUntil, freeMins: 0, report: rep,
+        badge: { kind: 'reported', text: '사용 중 제보 · ' + rep.age + '분 전' } };
+    }
+    let badge = { kind: 'timetable', text: '시간표 기준' };
+    if (rep && rep.type === 'free') badge = { kind: 'verified', text: rep.age + '분 전 확인됨' };
+    else if (verifiedAgo != null && verifiedAgo <= REPORT_TTL) badge = { kind: 'verified', text: verifiedAgo + '분 전 확인됨' };
+    return { occupied: false, reason: null, current: null, next, freeUntil, freeMins: freeUntil - now, report: rep, badge };
+  }
+
+  function passes(room, st, f) {
+    if (f.b !== 'all' && room.b !== f.b) return false;
+    if (f.cap && room.cap < f.cap) return false;
+    if (f.outlet && room.outlets < 1) return false;
+    if (f.quiet && room.noise > 0) return false;
+    if (f.min && st.freeMins < f.min) return false;
+    return true;
+  }
+
+  const API = { OPEN, CLOSE, DEMO, REPORT_TTL, fmtTime, fmtDur, fmtSec, getNow, walkMin, status, passes };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  root.Logic = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* 빈자리 — UI */
+(function () {
+  'use strict';
+  const { BUILDINGS, ROOMS, SEED_VERIFIED, SEED_REPORTS } = window.DATA;
+  const L = window.Logic;
+  const LOAD_TS = Date.now();
+
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  function load(k, d) { try { const v = localStorage.getItem('binjari.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+  function persist(k, v) { try { localStorage.setItem('binjari.' + k, JSON.stringify(v)); } catch (e) { /* 저장 불가 환경 */ } }
+
+  const state = {
+    filters: { b: 'all', min: 0, outlet: false, quiet: false, showOcc: false },
+    clock: null,
+    custom: load('custom', []),
+    saved: load('saved', []),
+    reports: load('reports', {}),
+    notify: load('notify', {}),
+    toasted: {}
+  };
+
+  /* ---------- 데이터 계산 ---------- */
+  function allReports() {
+    const out = {};
+    Object.keys(SEED_REPORTS).forEach((id) => {
+      const s = SEED_REPORTS[id];
+      out[id] = { type: s.type, ts: LOAD_TS - s.agoMin * 60000, note: s.note };
+    });
+    return Object.assign(out, state.reports);
+  }
+  function nowInfo() { return L.getNow(state.clock); }
+  function stOf(room, nowMin) {
+    const st = L.status(room, nowMin, allReports()[room.id], SEED_VERIFIED[room.id], Date.now());
+    if (room.custom && st.badge.kind === 'timetable') st.badge = { kind: 'timetable', text: '직접 입력 정보' };
+    return st;
+  }
+  function allRooms() { return ROOMS.concat(state.custom.map((r) => Object.assign({ custom: true, cap: 0 }, r))); }
+  function roomById(id) { return allRooms().find((r) => r.id === id); }
+  function bname(r) { return r.bname || (BUILDINGS[r.b] ? BUILDINGS[r.b].name : r.b); }
+  function buildingOptions() {
+    const seen = {}; const out = [];
+    Object.keys(BUILDINGS).forEach((k) => { seen[k] = 1; out.push({ v: k, t: BUILDINGS[k].name }); });
+    state.custom.forEach((r) => { if (!seen[r.b]) { seen[r.b] = 1; out.push({ v: r.b, t: r.bname }); } });
+    return out;
+  }
+  function noiseText(n) { return ['조용함', '보통', '활발함'][n]; }
+  function outletText(n) { return ['콘센트 없음', '콘센트 보통', '콘센트 많음'][n]; }
+
+  /* ---------- 공통 UI ---------- */
+  function toast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove('show'), 2400);
+  }
+  function modal(html) {
+    const m = $('#modal');
+    m.innerHTML = '<div class="sheet" role="dialog" aria-modal="true">' + html + '</div>';
+    m.classList.add('open');
+  }
+  function closeModal() { $('#modal').classList.remove('open'); $('#modal').innerHTML = ''; }
+
+  function badge(b) { return '<span class="badge ' + b.kind + '">' + esc(b.text) + '</span>'; }
+
+  function chipGroup(label, key, options, current) {
+    return '<div class="fgroup"><div class="flabel">' + esc(label) + '</div><div class="chips">' +
+      options.map((o) => '<button class="chip' + (String(o.v) === String(current) ? ' on' : '') +
+        '" data-act="f" data-k="' + key + '" data-v="' + esc(o.v) + '">' + esc(o.t) + '</button>').join('') +
+      '</div></div>';
+  }
+  function toggleChip(label, key, on) {
+    return '<button class="chip' + (on ? ' on' : '') + '" data-act="ft" data-k="' + key + '">' + esc(label) + '</button>';
+  }
+
+  /* ---------- 화면: 홈 ---------- */
+  function viewHome() {
+    const info = nowInfo();
+    const f = state.filters;
+    const rows = allRooms().map((r) => ({ r, st: stOf(r, info.min) }))
+      .filter((x) => L.passes(x.r, x.st, f));
+    const free = rows.filter((x) => !x.st.occupied).sort((a, b) => b.st.freeMins - a.st.freeMins);
+    const occ = rows.filter((x) => x.st.occupied && x.st.reason !== 'closed');
+    const bOpts = [{ v: 'all', t: '전체' }].concat(buildingOptions());
+
+    let h = '<section class="panel">' +
+      '<div class="clock"><span class="clock-label">기준 시각</span>' +
+      '<input type="time" id="clockInput" value="' + L.fmtTime(info.min) + '" aria-label="기준 시각">' +
+      '<button class="link" data-act="clockNow">지금으로</button></div>' +
+      (info.demo ? '<p class="note">지금은 이용 시간이 아니라 데모 시각(11:00)으로 보여줘요.</p>' : '') +
+      chipGroup('건물', 'b', bOpts, f.b) +
+      chipGroup('최소 빈 시간', 'min', [{ v: 0, t: '제한 없음' }, { v: 30, t: '30분+' }, { v: 60, t: '1시간+' }, { v: 120, t: '2시간+' }], f.min) +
+      '<div class="fgroup"><div class="flabel">조건</div><div class="chips">' +
+      toggleChip('🔌 콘센트 있음', 'outlet', f.outlet) + toggleChip('🤫 조용한 곳', 'quiet', f.quiet) +
+      toggleChip('사용 중인 곳도 보기', 'showOcc', f.showOcc) + '</div></div></section>';
+
+    h += '<div class="count"><strong>' + free.length + '곳</strong> 지금 비어 있어요 <span class="sub">· 빈 시간이 긴 순</span></div>';
+    if (!free.length) {
+      h += '<div class="empty"><p>조건에 맞는 빈 공간이 없어요.</p><p class="sub">조건을 조금 줄이거나, 직접 아는 강의실을 추가해 보세요.</p>' +
+        '<button class="btn" data-act="resetF">필터 초기화</button> <a class="btn" href="#add">+ 강의실 추가</a></div>';
+    }
+    h += '<ul class="list">' + free.map((x) => card(x, info.min)).join('') + '</ul>';
+    if (f.showOcc && occ.length) {
+      h += '<div class="count dim">지금 사용 중 (' + occ.length + ')</div><ul class="list">' + occ.map((x) => card(x, info.min)).join('') + '</ul>';
+    }
+    h += '<p class="foot">※ 기본 시간표·확인 정보는 가상 데이터입니다. 직접 입력한 강의실은 이 브라우저에만 저장돼요.</p>';
+    return h;
+  }
+
+  function card(x, now) {
+    const r = x.r, st = x.st;
+    const saved = state.saved.includes(r.id);
+    let main;
+    if (st.occupied) {
+      main = st.reason === 'class'
+        ? '<div class="main occ">' + esc(L.fmtTime(st.availableAt)) + '까지 수업 중</div>'
+        : '<div class="main occ">' + esc(st.report && st.report.note ? st.report.note : '지금은 사용 중이에요') + '</div>';
+    } else {
+      main = '<div class="main">지금부터 <b>' + L.fmtDur(st.freeMins) + '</b> 비어 있음' +
+        (st.next ? '' : ' <span class="sub">(운영 종료까지)</span>') + '</div>' +
+        (st.next ? '<div class="sub">' + L.fmtTime(st.next.s) + ' ' + esc(st.next.name) + ' 수업 시작</div>' : '');
+    }
+    return '<li><a class="card' + (st.occupied ? ' dimmed' : '') + '" href="#room-' + r.id + '">' +
+      '<div class="row between"><div class="title">' + esc(bname(r)) + ' ' + esc(r.floor) + ' ' + esc(r.name) +
+      (saved ? ' <span class="star" aria-label="저장됨">★</span>' : '') + '</div>' + badge(st.badge) + '</div>' +
+      main +
+      '<div class="tags">' + (r.custom ? '<span>✏️ 직접 입력</span>' : '') + '<span>🔌 ' + ['없음', '보통', '많음'][r.outlets] + '</span><span>🤫 ' + noiseText(r.noise) + '</span></div>' +
+      '</a></li>';
+  }
+
+  /* ---------- 화면: 상세 ---------- */
+  function timeline(room, now) {
+    const span = L.CLOSE - L.OPEN;
+    const pct = (m) => ((m - L.OPEN) / span * 100).toFixed(2);
+    const blocks = room.classes.map((k) =>
+      '<div class="blk" style="left:' + pct(k.s) + '%;width:' + ((k.e - k.s) / span * 100).toFixed(2) + '%" title="' +
+      esc(k.name) + ' ' + L.fmtTime(k.s) + '–' + L.fmtTime(k.e) + '"></div>').join('');
+    const ticks = [8, 12, 16, 20].map((hh) => '<span style="left:' + pct(hh * 60) + '%">' + hh + '시</span>').join('');
+    return '<div class="tl"><div class="bar">' + blocks + '<div class="nowline" style="left:' + pct(now) + '%"></div></div>' +
+      '<div class="ticks">' + ticks + '</div></div>';
+  }
+
+  function viewDetail(id) {
+    const room = roomById(id);
+    if (!room) return '<div class="empty"><p>공간을 찾을 수 없어요.</p><a class="btn" href="#home">홈으로</a></div>';
+    const info = nowInfo(), st = stOf(room, info.min);
+    const saved = state.saved.includes(id);
+    const notifyOn = !!state.notify[id];
+
+    let h = '<button class="back" data-act="back">← 목록</button>' +
+      '<div class="d-head"><h2>' + esc(bname(room)) + ' ' + esc(room.floor) + ' ' + esc(room.name) + '</h2>' + badge(st.badge) + '</div>';
+
+    if (st.occupied) {
+      h += '<div class="alert occ"><b>' + (st.reason === 'class' ? L.fmtTime(st.availableAt) + '까지 수업 중이에요' :
+        st.reason === 'report' ? '다른 사용자가 사용 중이라고 제보했어요' : '지금은 이용 시간이 아니에요') + '</b>' +
+        (st.report && st.report.note ? '<div>' + esc(st.report.note) + '</div>' : '') + '</div>';
+    } else {
+      h += '<div class="alert ok"><b>지금부터 ' + L.fmtDur(st.freeMins) + ' 비어 있어요</b>' +
+        (st.next ? '<div class="warn">⏰ ' + L.fmtTime(st.next.s) + '에 ‘' + esc(st.next.name) + '’ 수업이 시작돼요. 그 전에 자리를 비워야 해요.</div>' : '') + '</div>';
+    }
+
+    h += '<dl class="facts">' +
+      '<div><dt>콘센트</dt><dd>' + outletText(room.outlets).replace('콘센트 ', '') + '</dd></div>' +
+      '<div><dt>소음</dt><dd>' + noiseText(room.noise) + '</dd></div>' +
+      '<div><dt>정보 기준</dt><dd>' + esc(st.badge.text) + '</dd></div></dl>' +
+      (room.memo ? '<p class="memo">📝 ' + esc(room.memo) + '</p>' : '');
+
+    h += '<h3>오늘 시간표</h3>' + timeline(room, info.min) +
+      '<ul class="sched">' + room.classes.map((k) => '<li><span>' + L.fmtTime(k.s) + '–' + L.fmtTime(k.e) + '</span>' + esc(k.name) + '</li>').join('') + '</ul>' +
+      '<p class="sub">세로선이 기준 시각(' + L.fmtTime(info.min) + ')이에요. 시간표에 없는 특강·보강은 아래 제보로 알려 주세요.</p>';
+
+    h += '<div class="actions">' +
+      '<button class="btn' + (saved ? ' on' : '') + '" data-act="save" data-id="' + id + '">' + (saved ? '★ 저장됨' : '☆ 저장') + '</button>' +
+      '<button class="btn" data-act="share" data-id="' + id + '">공유</button>' +
+      '<button class="btn' + (notifyOn ? ' on' : '') + '" data-act="notify" data-id="' + id + '">' + (notifyOn ? '🔔 알림 켜짐' : '🔕 수업 10분 전 알림') + '</button></div>';
+
+    h += '<h3>방금 가 봤나요?</h3><div class="actions">' +
+      '<button class="btn ghost" data-act="report" data-t="free" data-id="' + id + '">✅ 비어 있었어요</button>' +
+      '<button class="btn ghost" data-act="report" data-t="occupied" data-id="' + id + '">🚫 사용 중이었어요</button></div>';
+
+    if (room.custom) {
+      h += '<h3>내가 입력한 정보</h3><div class="actions"><a class="btn ghost" href="#edit-' + id + '">✏️ 수정</a>' +
+        '<button class="btn ghost" data-act="delRoom" data-id="' + id + '">🗑 삭제</button></div>';
+    }
+    return h;
+  }
+
+  /* ---------- 화면: 저장 ---------- */
+  function viewSaved() {
+    const info = nowInfo();
+    const rows = state.saved.map(roomById).filter(Boolean)
+      .map((r) => ({ r, st: stOf(r, info.min) }));
+    let h = '<div class="row between"><h2 class="ptitle">저장한 공간</h2><a class="btn" href="#add">+ 직접 추가</a></div>';
+    if (!rows.length) {
+      return h + '<div class="empty"><p>아직 저장한 공간이 없어요.</p><p class="sub">자주 가는 곳을 저장하면 캡처 없이 다시 볼 수 있어요.</p><a class="btn" href="#home">빈 공간 찾기</a></div>';
+    }
+    return h + '<ul class="list">' + rows.map((x) => card(x, info.min)).join('') + '</ul>';
+  }
+
+  /* ---------- 화면: 강의실 직접 추가·수정 ---------- */
+  function rowHtml(s, e, n) {
+    return '<div class="crow"><input type="time" class="cs" value="' + (s || '') + '" aria-label="시작">' +
+      '<span>~</span><input type="time" class="ce" value="' + (e || '') + '" aria-label="끝">' +
+      '<input class="cn input" placeholder="수업명(선택)" maxlength="20" value="' + esc(n || '') + '">' +
+      '<button class="chip" data-act="delRow" aria-label="행 삭제">✕</button></div>';
+  }
+  function sel(id, opts, cur) {
+    return '<select id="' + id + '" class="input">' + opts.map((o, i) => '<option value="' + i + '"' + (i === cur ? ' selected' : '') + '>' + o + '</option>').join('') + '</select>';
+  }
+  function viewForm(id) {
+    const ed = id ? state.custom.find((r) => r.id === id) : null;
+    if (id && !ed) return '<div class="empty"><p>수정할 강의실을 찾을 수 없어요.</p><a class="btn" href="#saved">저장 목록</a></div>';
+    const v = ed || { bname: '', floor: '', name: '', outlets: 1, noise: 1, classes: [], memo: '' };
+    const names = []; buildingOptions().forEach((o) => names.push(o.t));
+    return '<h2 class="ptitle">' + (ed ? '강의실 수정' : '강의실 직접 추가') + '</h2>' +
+      '<p class="sub">내가 아는 빈 강의실 정보를 입력하면 목록에 함께 나오고 저장돼요.</p>' +
+      '<div class="panel"><label class="flabel" for="f-b">건물 *</label>' +
+      '<input id="f-b" class="input" list="blist" maxlength="20" placeholder="예: 인문관" value="' + esc(v.bname) + '">' +
+      '<datalist id="blist">' + names.map((n) => '<option value="' + esc(n) + '">').join('') + '</datalist>' +
+      '<div class="two"><div><label class="flabel" for="f-floor">층</label><input id="f-floor" class="input" maxlength="6" placeholder="예: 3F" value="' + esc(v.floor) + '"></div>' +
+      '<div><label class="flabel" for="f-name">호실·이름 *</label><input id="f-name" class="input" maxlength="20" placeholder="예: 305호" value="' + esc(v.name) + '"></div></div>' +
+      '<div class="two"><div><label class="flabel" for="f-out">콘센트</label>' + sel('f-out', ['없음', '보통', '많음'], v.outlets) + '</div>' +
+      '<div><label class="flabel" for="f-noise">소음</label>' + sel('f-noise', ['조용함', '보통', '활발함'], v.noise) + '</div></div>' +
+      '<div class="flabel">수업이 있는 시간 (이 시간에는 사용 중으로 표시돼요)</div><div id="clsRows">' +
+      (v.classes.length ? v.classes.map((k) => rowHtml(L.fmtTime(k.s), L.fmtTime(k.e), k.name)).join('') : rowHtml()) + '</div>' +
+      '<button class="btn ghost" data-act="addRow">+ 시간 추가</button>' +
+      '<label class="flabel" for="f-memo" style="margin-top:12px">메모 (선택)</label>' +
+      '<input id="f-memo" class="input" maxlength="60" placeholder="예: 문 앞 책상이 조용해요" value="' + esc(v.memo || '') + '">' +
+      '<div class="actions"><button class="btn primary" data-act="saveRoom" data-id="' + (ed ? ed.id : '') + '">저장</button>' +
+      '<button class="btn ghost" data-act="back">취소</button></div></div>';
+  }
+  function toMin(v) { if (!v) return null; const [h, m] = v.split(':').map(Number); return h * 60 + m; }
+  function saveRoom(id) {
+    const b = $('#f-b').value.trim(), name = $('#f-name').value.trim();
+    if (!b || !name) { toast('건물과 호실·이름은 꼭 입력해 주세요'); return; }
+    const classes = [];
+    for (const row of document.querySelectorAll('#clsRows .crow')) {
+      const s = toMin(row.querySelector('.cs').value), e = toMin(row.querySelector('.ce').value);
+      const n = row.querySelector('.cn').value.trim();
+      if (s == null && e == null && !n) continue;
+      if (s == null || e == null || s >= e) { toast('수업 시간은 시작이 끝보다 빨라야 해요'); return; }
+      classes.push({ s, e, name: n || '수업' });
+    }
+    classes.sort((x, y) => x.s - y.s);
+    const key = Object.keys(BUILDINGS).find((k) => BUILDINGS[k].name === b) || 'c:' + b;
+    const room = { id: id || 'u' + Date.now().toString(36), b: key, bname: b, floor: $('#f-floor').value.trim(), name,
+      outlets: Number($('#f-out').value), noise: Number($('#f-noise').value), classes, memo: $('#f-memo').value.trim() };
+    const i = state.custom.findIndex((r) => r.id === room.id);
+    if (i >= 0) state.custom[i] = room; else { state.custom.push(room); state.saved.push(room.id); persist('saved', state.saved); }
+    persist('custom', state.custom);
+    toast(i >= 0 ? '수정했어요' : '저장했어요'); location.hash = 'room-' + room.id;
+  }
+
+  /* ---------- 라우터 ---------- */
+  function render() {
+    const hash = (location.hash || '#home').slice(1);
+    let html, tab = 'home';
+    if (hash.startsWith('room-')) html = viewDetail(hash.slice(5));
+    else if (hash === 'add') { html = viewForm(); tab = 'add'; }
+    else if (hash.startsWith('edit-')) { html = viewForm(hash.slice(5)); tab = 'add'; }
+    else if (hash === 'saved') { html = viewSaved(); tab = 'saved'; }
+    else html = viewHome();
+    $('#view').innerHTML = html;
+    document.querySelectorAll('.nav a').forEach((a) => a.classList.toggle('on', a.dataset.tab === tab));
+  }
+
+  /* ---------- 액션 ---------- */
+  function shareText(room) {
+    const info = nowInfo(), st = stOf(room, info.min);
+    const where = bname(room) + ' ' + room.floor + ' ' + room.name;
+    const when = st.occupied ? '지금은 사용 중' : '지금부터 ' + L.fmtDur(st.freeMins) + ' 비어 있어요';
+    return '[빈자리] ' + where + ' — ' + when + ' (' + outletText(room.outlets) + ' · ' + noiseText(room.noise) + ')\n' +
+      location.href.split('#')[0] + '#room-' + room.id;
+  }
+
+  function copyBox(title, text) {
+    modal('<h3>' + esc(title) + '</h3><textarea id="copyArea" class="input" rows="6" readonly>' + esc(text) + '</textarea>' +
+      '<div class="actions"><button class="btn primary" data-act="copy">복사</button><button class="btn ghost" data-act="closeModal">닫기</button></div>');
+    const ta = $('#copyArea'); if (ta) { ta.focus(); ta.select(); }
+  }
+
+  document.addEventListener('click', (e) => {
+    const el = e.target.closest('[data-act]');
+    if (!el) { if (e.target.id === 'modal') closeModal(); return; }
+    const act = el.dataset.act, id = el.dataset.id;
+    const f = state.filters;
+    switch (act) {
+      case 'f': f[el.dataset.k] = isNaN(el.dataset.v) ? el.dataset.v : Number(el.dataset.v); render(); break;
+      case 'ft': f[el.dataset.k] = !f[el.dataset.k]; render(); break;
+      case 'resetF': state.filters = { b: 'all', min: 0, outlet: false, quiet: false, showOcc: false }; render(); break;
+      case 'clockNow': state.clock = null; render(); break;
+      case 'back': if (history.length > 1) history.back(); else location.hash = 'home'; break;
+      case 'save': {
+        const i = state.saved.indexOf(id);
+        if (i >= 0) { state.saved.splice(i, 1); toast('저장을 해제했어요'); } else { state.saved.push(id); toast('저장했어요'); }
+        persist('saved', state.saved); render(); break;
+      }
+      case 'notify':
+        state.notify[id] = !state.notify[id]; persist('notify', state.notify);
+        toast(state.notify[id] ? '수업 시작 10분 전에 알려 드려요' : '알림을 껐어요'); render(); break;
+      case 'share': copyBox('공유할 내용', shareText(roomById(id))); break;
+      case 'copy': {
+        const ta = $('#copyArea'); if (!ta) break;
+        ta.select();
+        try { navigator.clipboard.writeText(ta.value).then(() => toast('복사했어요'), () => toast('길게 눌러 직접 복사해 주세요')); }
+        catch (err) { toast('길게 눌러 직접 복사해 주세요'); }
+        break;
+      }
+      case 'closeModal': closeModal(); break;
+      case 'addRow': $('#clsRows').insertAdjacentHTML('beforeend', rowHtml()); break;
+      case 'delRow': el.closest('.crow').remove(); break;
+      case 'saveRoom': saveRoom(id); break;
+      case 'delRoom':
+        modal('<h3>이 강의실을 삭제할까요?</h3><div class="actions"><button class="btn primary" data-act="doDelRoom" data-id="' + id + '">삭제</button><button class="btn ghost" data-act="closeModal">취소</button></div>'); break;
+      case 'doDelRoom':
+        state.custom = state.custom.filter((r) => r.id !== id); state.saved = state.saved.filter((x) => x !== id);
+        persist('custom', state.custom); persist('saved', state.saved); closeModal(); toast('삭제했어요'); location.hash = 'saved'; break;
+      case 'report':
+        state.reports[id] = { type: el.dataset.t, ts: Date.now() }; persist('reports', state.reports);
+        toast(el.dataset.t === 'free' ? '확인 감사해요! 다른 사람에게 반영돼요' : '제보 감사해요! 사용 중으로 표시돼요'); render(); break;
+    }
+  });
+
+  document.addEventListener('change', (e) => {
+    if (e.target.id === 'clockInput' && e.target.value) {
+      const [h, m] = e.target.value.split(':').map(Number); state.clock = h * 60 + m; render();
+    }
+  });
+
+  window.addEventListener('hashchange', () => { closeModal(); render(); window.scrollTo(0, 0); });
+
+  /* 타이머·알림 틱 */
+  setInterval(() => {
+    const info = nowInfo();
+    Object.keys(state.notify).forEach((id) => {
+      if (!state.notify[id] || state.toasted[id]) return;
+      const room = roomById(id); if (!room) return;
+      const st = stOf(room, info.min);
+      if (!st.occupied && st.next && st.next.s - info.min <= 10) {
+        state.toasted[id] = true;
+        toast('⏰ ' + bname(room) + ' ' + room.name + ' — ' + (st.next.s - info.min) + '분 뒤 수업이 시작돼요');
+      }
+    });
+  }, 1000);
+
+  render();
+})();
+
+</script>
+</body>
+</html>
